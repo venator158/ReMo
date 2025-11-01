@@ -2,13 +2,13 @@
 
 A comprehensive real-time monitoring system built with Kafka, FastAPI, Svelte, and Prometheus. This project demonstrates a scalable architecture for collecting, processing, and visualizing metrics from multiple nodes with alerting capabilities.
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+┌─────────────────┐     ┌─────────────────┐      ┌─────────────────┐
 │  Metric Nodes   │────▶│  Kafka Broker   │────▶│   Backend API   │
-│  (Producers)    │     │   (Zookeeper)   │     │   (Consumer)    │
-│  - Node 1       │     └─────────────────┘     │  - FastAPI      │
+│  (Producers)    │     │   (Zookeeper)   │      │   (Consumer)    │
+│  - Node 1       │     └─────────────────┘      │  - FastAPI      │
 │  - Node 2       │                              │  - PostgreSQL   │
 │  - Node 3       │                              │  - Prometheus   │
 │  - Node 4       │                              └────────┬────────┘
@@ -23,7 +23,7 @@ A comprehensive real-time monitoring system built with Kafka, FastAPI, Svelte, a
                                                 └─────────────────┘
 ```
 
-## ✨ Features
+## Features
 
 - **4 Dockerized Metric Nodes**: Generate and publish CPU, Memory, Disk I/O, and Network metrics
 - **Kafka Message Broker**: Reliable message streaming with topic-based architecture
@@ -35,7 +35,7 @@ A comprehensive real-time monitoring system built with Kafka, FastAPI, Svelte, a
 - **JWT Authentication**: Secure login system with role-based access
 - **PostgreSQL Storage**: Persistent storage for metrics, alerts, and configurations
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 remo-project/
@@ -91,7 +91,7 @@ remo-project/
                 └── auth.js
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -142,7 +142,7 @@ To remove all data volumes:
 docker-compose down -v
 ```
 
-## 📊 Usage Guide
+## Usage Guide
 
 ### Dashboard Overview
 
@@ -197,7 +197,7 @@ Edit `docker-compose.yml` to customize:
 **Backend**:
 - `DATABASE_URL`: PostgreSQL connection string
 - `KAFKA_BOOTSTRAP_SERVERS`: Kafka broker address
-- `JWT_SECRET_KEY`: Secret key for JWT tokens (⚠️ Change in production!)
+- `JWT_SECRET_KEY`: Secret key for JWT tokens 
 - `PROMETHEUS_PORT`: Port for Prometheus metrics
 
 **Metric Nodes**:
@@ -241,7 +241,7 @@ VALUES ('node-5', 'Server-Epsilon', 'active')
 ON CONFLICT (node_id) DO NOTHING;
 ```
 
-## 🔍 API Documentation
+## API Documentation
 
 Once the backend is running, visit http://localhost:8000/docs for interactive API documentation.
 
@@ -273,7 +273,7 @@ Once the backend is running, visit http://localhost:8000/docs for interactive AP
 - `GET /api/export/csv` - Export metrics as CSV
 - `GET /api/export/summary` - Get metrics summary
 
-## 🛠️ Development
+## Development
 
 ### Running Components Individually
 
@@ -300,7 +300,7 @@ pip install -r requirements.txt
 python metric_producer.py
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Services not starting
 
@@ -334,16 +334,16 @@ python metric_producer.py
 - Check backend is accessible: http://localhost:8000/health
 - View frontend logs: `docker-compose logs frontend`
 
-## 📈 Performance Considerations
+## Performance Considerations
 
 - **Metric Interval**: Default is 5 seconds. Increase for lower load.
 - **Data Retention**: Metrics accumulate in PostgreSQL. Implement cleanup jobs for production.
 - **Prometheus Storage**: Configure retention in `prometheus.yml` for production use.
 - **Kafka Partitions**: Increase partitions for higher throughput with more consumers.
 
-## 🔐 Security Notes
+## Security Notes
 
-⚠️ **Important for Production**:
+ **Important for Production**:
 
 1. Change `JWT_SECRET_KEY` in docker-compose.yml
 2. Use environment variables or secrets management (not hardcoded values)
@@ -355,18 +355,18 @@ python metric_producer.py
 8. Implement rate limiting on APIs
 9. Regular security updates for all dependencies
 
-## 📝 License
+## License
 
 This project is provided as-is for educational and demonstration purposes.
 
-## 🤝 Contributing
+## Contributing
 
 Contributions, issues, and feature requests are welcome!
 
-## 📧 Support
+## Support
 
 For questions or issues, please open an issue in the repository.
 
 ---
 
-Built with ❤️ using Kafka, FastAPI, Svelte, PostgreSQL, and Prometheus
+Built using Kafka, FastAPI, Svelte, PostgreSQL, and Prometheus
