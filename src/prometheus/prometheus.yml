@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'remo-monitor'
+
+scrape_configs:
+  # Backend metrics endpoint
+  - job_name: 'remo-backend'
+    static_configs:
+      - targets: ['backend:8001']
+        labels:
+          service: 'backend'
+          environment: 'production'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

@@ -1,0 +1,202 @@
+services:
+  # Zookeeper - Required for Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - remo-network
+
+  # Kafka Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-broker
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - remo-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: remo_db
+      POSTGRES_USER: remo_user
+      POSTGRES_PASSWORD: remo_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./src/backend/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - remo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U remo_user -d remo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./src/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - remo-network
+    depends_on:
+      - backend
+
+  # Metric Node 1
+  metric-node-1:
+    build:
+      context: ./src/metric-nodes
+      dockerfile: Dockerfile
+    container_name: metric-node-1
+    environment:
+      NODE_ID: "node-1"
+      NODE_NAME: "Server-Alpha"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: "metrics-node-1"
+      METRIC_INTERVAL: 5
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - remo-network
+    restart: unless-stopped
+
+  # Metric Node 2
+  metric-node-2:
+    build:
+      context: ./src/metric-nodes
+      dockerfile: Dockerfile
+    container_name: metric-node-2
+    environment:
+      NODE_ID: "node-2"
+      NODE_NAME: "Server-Beta"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: "metrics-node-2"
+      METRIC_INTERVAL: 5
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - remo-network
+    restart: unless-stopped
+
+  # Metric Node 3
+  metric-node-3:
+    build:
+      context: ./src/metric-nodes
+      dockerfile: Dockerfile
+    container_name: metric-node-3
+    environment:
+      NODE_ID: "node-3"
+      NODE_NAME: "Server-Gamma"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: "metrics-node-3"
+      METRIC_INTERVAL: 5
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - remo-network
+    restart: unless-stopped
+
+  # Metric Node 4
+  metric-node-4:
+    build:
+      context: ./src/metric-nodes
+      dockerfile: Dockerfile
+    container_name: metric-node-4
+    environment:
+      NODE_ID: "node-4"
+      NODE_NAME: "Server-Delta"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: "metrics-node-4"
+      METRIC_INTERVAL: 5
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - remo-network
+    restart: unless-stopped
+
+  # Backend (FastAPI + Kafka Consumer)
+  backend:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql://remo_user:remo_password@postgres:5432/remo_db
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET_KEY: "your-secret-key-change-in-production"
+      JWT_ALGORITHM: "HS256"
+      PROMETHEUS_PORT: 8001
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - remo-network
+    restart: unless-stopped
+
+  # Frontend (Svelte)
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - remo-network
+    restart: unless-stopped
+
+networks:
+  remo-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  prometheus-data:
